@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import select, Result
+from sqlalchemy import select, Result, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .schemas import UserBase
@@ -26,11 +26,17 @@ async def read_user_by_id(session: AsyncSession, user_id: int) -> User:
     user = result.scalars().first()
     return user
 
-async def delete_user_by_id(session: AsyncSession, user_id: int) -> None:
+async def delete_user_by_id(session: AsyncSession, user_id: int):
     stmt = select(User).where(User.id == user_id)
     result: Result = await session.execute(stmt)
-    await session.delete(result)
-    await session.commit()
-    return None
+    user = result.scalars().first()
+    if user:
+        stmt = delete(User).where(User.id == user_id)
+        await session.execute(stmt)
+        await session.commit()
+        return user
+    else:
+        return None
+
 
 
