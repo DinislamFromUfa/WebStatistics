@@ -1,9 +1,11 @@
 from typing import List
 
+from fastapi import HTTPException
 from sqlalchemy import select, Result, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette import status
 
-from .schemas import UserBase
+from .schemas import UserBase, UserCreate
 from .models import User
 
 
@@ -13,7 +15,12 @@ async def read_users(session: AsyncSession) -> List[User]:
     users = result.scalars().all()
     return users
 
-async def create_user(session: AsyncSession, user: UserBase) -> User:
+async def create_user(session: AsyncSession, user: UserCreate) -> User:
+    existing_user = await session.execute(select(User).where(User.email == user.email))
+    if existing_user.scalar():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Email already registered"
+                            )
     user = User(**user.model_dump())
     session.add(user)
     await session.commit()
