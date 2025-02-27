@@ -2,10 +2,10 @@ from typing import List
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from .schemas import UserCreate
+from .schemas import UserCreate, UserUpdate
 from .database import get_db
 from .schemas import UserBase
-from .usercrud import read_users, create_user, read_user_by_id, delete_user_by_id
+from .usercrud import read_users, create_user, read_user_by_id, delete_user_by_id, update_user
 
 router = APIRouter(tags=["users"])
 
@@ -24,7 +24,13 @@ async def get_user_by_id(user_id: int, session: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@router.patch("/{user_id}/")
+async def update_one_user(user_id: int, user_update: UserUpdate, session: AsyncSession = Depends(get_db)):
+    updated_user = await update_user(user_id=user_id, user_update=user_update, session=session)
+    return updated_user
+
 @router.delete("/{user_id}/", status_code=204)
 async def delete_user(user_id: int, session: AsyncSession = Depends(get_db)):
     await delete_user_by_id(session=session, user_id=user_id)
+
 
